@@ -7,6 +7,9 @@ const margin = { top: 50, right: 50, bottom: 50, left: 50 };
 const graphWidth = w - margin.left - margin.right;
 const graphHeight = h - margin.top - margin.bottom;
 
+// months for y-axis
+const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
 // main svg
 const svg = d3.select(".canvas").append("svg").attr("width", w).attr("height", h);
 
@@ -39,10 +42,27 @@ svg
 document.addEventListener("DOMContentLoaded", () => {
   fetch("https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/global-temperature.json")
     .then((res) => res.json())
+    .then((data) => data.monthlyVariance)
     .then((data) => {
-      const minYear = d3.min(data.monthlyVariance, (d) => d.year);
-      const maxYear = d3.max(data.monthlyVariance, (d) => d.year);
-      console.log(`Retrieved ${data.monthlyVariance.length} records`);
-      console.log(`Found data from ${minYear} to ${maxYear}`);
+      const minDate = new Date(d3.min(data, (d) => d.year), 0, 1);
+      const maxDate = new Date(d3.max(data, (d) => d.year), 0, 1);
+      console.log(`Retrieved ${data.length} records`);
+      console.log(`Found data from ${minDate} to ${maxDate}`);
+
+      // yScale is bands for each of the 12 months
+      const yScale = d3
+        .scaleBand()
+        .domain(months)
+        .range([0, graphHeight]);
+      
+      // xScale is a time scale of all the possible years
+      const xScale = d3
+        .scaleLinear()
+        .domain([minDate, maxDate])
+        .range([0, graphWidth])
+
+      console.log('1753 would be ' + xScale(new Date(1753, 0, 1)));
+      console.log('1880 would be ' + xScale(new Date(1880, 0, 1)));
+      console.log('2000 would be ' + xScale(new Date(2000, 0, 1)));
     });
 });

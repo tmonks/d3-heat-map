@@ -1,6 +1,6 @@
 // margins and dimensions
-const w = 800;
-const h = 500;
+const w = 1024;
+const h = 600;
 const legendWidth = 300;
 const legendHeight = 20;
 const margin = { top: 50, right: 50, bottom: 50, left: 50 };
@@ -27,3 +27,22 @@ svg
   .attr("x", w / 2)
   .attr("y", 30)
   .text("Monthly Global Land-Surface Temperature");
+
+// add description
+svg
+  .append("text")
+  .attr("id", "description")
+  .attr("x", w / 2)
+  .attr("y", 60)
+  .text("1753 - 2015: base temperature 8.66");
+
+document.addEventListener("DOMContentLoaded", () => {
+  fetch("https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/global-temperature.json")
+    .then((res) => res.json())
+    .then((data) => {
+      const minYear = d3.min(data.monthlyVariance, (d) => d.year);
+      const maxYear = d3.max(data.monthlyVariance, (d) => d.year);
+      console.log(`Retrieved ${data.monthlyVariance.length} records`);
+      console.log(`Found data from ${minYear} to ${maxYear}`);
+    });
+});

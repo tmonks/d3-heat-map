@@ -3,7 +3,7 @@ const w = 1024;
 const h = 600;
 const legendWidth = 300;
 const legendHeight = 20;
-const margin = { top: 50, right: 50, bottom: 50, left: 50 };
+const margin = { top: 50, right: 50, bottom: 50, left: 100 };
 const graphWidth = w - margin.left - margin.right;
 const graphHeight = h - margin.top - margin.bottom;
 
@@ -46,8 +46,11 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((data) => {
       const minDate = new Date(d3.min(data, (d) => d.year), 0, 1);
       const maxDate = new Date(d3.max(data, (d) => d.year), 0, 1);
+      const minVariance = d3.min(data, d => d.variance);
+      const maxVariance = d3.max(data, d => d.variance);
       console.log(`Retrieved ${data.length} records`);
-      console.log(`Found data from ${minDate} to ${maxDate}`);
+      console.log(`Found dates from ${minDate} to ${maxDate}`);
+      console.log(`Found variance ranging from ${minVariance} to ${maxVariance}`);
 
       // yScale is bands for each of the 12 months
       const yScale = d3
@@ -61,8 +64,27 @@ document.addEventListener("DOMContentLoaded", () => {
         .domain([minDate, maxDate])
         .range([0, graphWidth])
 
-      console.log('1753 would be ' + xScale(new Date(1753, 0, 1)));
-      console.log('1880 would be ' + xScale(new Date(1880, 0, 1)));
-      console.log('2000 would be ' + xScale(new Date(2000, 0, 1)));
+      // colorScale
+      const colorScale = d3
+        .scaleLinear()
+        .domain([minVariance, maxVariance])
+        .range(["white", "red"]);
+
+      // x-axis
+      const xAxis = d3.axisBottom(xScale);
+      svg.append("g")
+        .attr("id", "x-axis")
+        .attr("transform", `translate(${margin.left}, ${h - margin.bottom})`) // move it to the bottom edge minus padding
+        .call(xAxis);
+
+      const yAxis = d3.axisLeft(yScale);
+      svg.append("g")
+        .attr("id", "y-axis")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`) 
+        .call(yAxis);
+     
+      console.log(`-6 would be color ${colorScale(-6)}`)
+      console.log(`0 would be color ${colorScale(0)}`)
+      console.log(`3 would be color ${colorScale(3)}`)
     });
 });

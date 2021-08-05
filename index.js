@@ -1,9 +1,9 @@
 // margins and dimensions
-const w = 1024;
+const w = 1600;
 const h = 600;
 const legendWidth = 300;
 const legendHeight = 20;
-const margin = { top: 50, right: 50, bottom: 50, left: 100 };
+const margin = { top: 100, right: 50, bottom: 50, left: 100 };
 const graphWidth = w - margin.left - margin.right;
 const graphHeight = h - margin.top - margin.bottom;
 
@@ -44,8 +44,10 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((res) => res.json())
     .then((data) => data.monthlyVariance)
     .then((data) => {
-      const minDate = new Date(d3.min(data, (d) => d.year), 0, 1);
-      const maxDate = new Date(d3.max(data, (d) => d.year), 0, 1);
+      const minYear = d3.min(data, d => d.year);
+      const maxYear = d3.max(data, d => d.year);
+      const minDate = new Date(minYear, 0, 1);
+      const maxDate = new Date(maxYear, 0, 1);
       const minVariance = d3.min(data, d => d.variance);
       const maxVariance = d3.max(data, d => d.variance);
       console.log(`Retrieved ${data.length} records`);
@@ -60,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // xScale is a time scale of all the possible years
       const xScale = d3
-        .scaleLinear()
+        .scaleTime()
         .domain([minDate, maxDate])
         .range([0, graphWidth])
 
@@ -68,23 +70,40 @@ document.addEventListener("DOMContentLoaded", () => {
       const colorScale = d3
         .scaleLinear()
         .domain([minVariance, maxVariance])
-        .range(["white", "red"]);
+        .range(["yellow", "red"]);
 
-      // x-axis
+      // x-axis for the years
       const xAxis = d3.axisBottom(xScale);
       svg.append("g")
         .attr("id", "x-axis")
         .attr("transform", `translate(${margin.left}, ${h - margin.bottom})`) // move it to the bottom edge minus padding
         .call(xAxis);
 
+      // y-axis with months
       const yAxis = d3.axisLeft(yScale);
       svg.append("g")
         .attr("id", "y-axis")
         .attr("transform", `translate(${margin.left}, ${margin.top})`) 
         .call(yAxis);
-     
-      console.log(`-6 would be color ${colorScale(-6)}`)
-      console.log(`0 would be color ${colorScale(0)}`)
-      console.log(`3 would be color ${colorScale(3)}`)
+   
+      graph
+        .selectAll("rect")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("class", "cell")
+        .attr("x", (d, i) => xScale(new Date(d.year, 0, 1)))
+        .attr("y", (d, i) => yScale(months[d.month-1]))
+        .attr("width", graphWidth / (maxYear - minYear))
+        .attr("height", graphHeight / months.length)
+        .attr("fill", (d, i) => colorScale(d.variance))
+        .attr("data-month", d => d.month - 1)
+        .attr("data-year", d => d.year)
+        .attr("data-temp", d => d.variance);
+      // console.log(`minDate: ${minDate}, maxDate: ${maxDate}`)
+      // console.log(`-6 would be color ${colorScale(-6)}`)
+      // console.log(`0 would be color ${colorScale(0)}`)
+      // console.log(`3 would be color ${colorScale(3)}`)
+
     });
 });

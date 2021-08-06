@@ -6,6 +6,7 @@ const legendHeight = 20;
 const margin = { top: 100, right: 50, bottom: 50, left: 100 };
 const graphWidth = w - margin.left - margin.right;
 const graphHeight = h - margin.top - margin.bottom;
+const colors = [ "#f9edccff", "#f9df74ff", "#edae49ff", "#ea2b1fff", "#61210fff" ];
 
 // months for y-axis
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -21,7 +22,12 @@ const graph = svg
   .attr("transform", `translate(${margin.left}, ${margin.top})`); // move it by margin sizes
 
 // create legend area
-const legend = svg.append("g").attr("width", legendWidth).attr("height", legendHeight).attr("id", "legend");
+const legend = svg
+  .append("g")
+  .attr("width", legendWidth)
+  .attr("height", legendHeight)
+  .attr("id", "legend")
+  .attr("transform", "translate(20, 5)");
 
 // add title
 svg
@@ -68,9 +74,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // colorScale
       const colorScale = d3
+        .scaleQuantize()
+        .domain([minVariance, maxVariance])
+        .range(colors);
+
+      // legend scale
+      const legendScale = d3
         .scaleLinear()
         .domain([minVariance, maxVariance])
-        .range(["yellow", "red"]);
+        .range([0,legendWidth]);
 
       // x-axis for the years
       const xAxis = d3.axisBottom(xScale);
@@ -85,6 +97,28 @@ document.addEventListener("DOMContentLoaded", () => {
         .attr("id", "y-axis")
         .attr("transform", `translate(${margin.left}, ${margin.top})`) 
         .call(yAxis);
+
+      // legend Axis
+      const legendTicks = colors.map((x, i) => i * (maxVariance - minVariance) / colors.length + minVariance);
+      legendTicks.push(maxVariance);
+      console.log("ticks: " + legendTicks);
+      const legendAxis = d3.axisBottom(legendScale);
+      legendAxis.tickValues(legendTicks);
+      legendAxis.tickFormat(d3.format(".1f"));
+      legend.append("g")
+        .attr("id", "legend-axis")
+        .attr("transform", `translate(0, ${legendHeight})`)
+        .call(legendAxis);
+
+      legend
+        .selectAll("rect")
+        .data(colors)
+        .enter()
+        .append("rect")
+        .attr("x", (d, i) => (legendWidth / colors.length) * i)
+        .attr("width", legendWidth / colors.length)
+        .attr("height", legendHeight)
+        .attr("fill", d => d);
    
       graph
         .selectAll("rect")

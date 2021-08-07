@@ -6,10 +6,22 @@ const legendHeight = 20;
 const margin = { top: 100, right: 50, bottom: 50, left: 100 };
 const graphWidth = w - margin.left - margin.right;
 const graphHeight = h - margin.top - margin.bottom;
-const colors = [ "#f9edccff", "#f9df74ff", "#edae49ff", "#ea2b1fff", "#61210fff" ];
+const baseTemp = 8.66;
+
+// cell Colors
+const cellColors = [ "#f9edccff", "#f9df74ff", "#edae49ff", "#ea2b1fff", "#61210fff" ];
 
 // months for y-axis
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+const calcTemp = (variance) => baseTemp + variance;
+
+// add tooltip
+const tooltip = d3
+  .select(".canvas")
+  .append("div")
+  .attr("id", "tooltip")
+  .style("opacity", 0);
 
 // main svg
 const svg = d3.select(".canvas").append("svg").attr("width", w).attr("height", h);
@@ -76,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const colorScale = d3
         .scaleQuantize()
         .domain([minVariance, maxVariance])
-        .range(colors);
+        .range(cellColors);
 
       // legend scale
       const legendScale = d3
@@ -99,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .call(yAxis);
 
       // legend Axis
-      const legendTicks = colors.map((x, i) => i * (maxVariance - minVariance) / colors.length + minVariance);
+      const legendTicks = cellColors.map((x, i) => i * (maxVariance - minVariance) / cellColors.length + minVariance);
       legendTicks.push(maxVariance);
       console.log("ticks: " + legendTicks);
       const legendAxis = d3.axisBottom(legendScale);
@@ -110,16 +122,18 @@ document.addEventListener("DOMContentLoaded", () => {
         .attr("transform", `translate(0, ${legendHeight})`)
         .call(legendAxis);
 
+      // legend squares
       legend
         .selectAll("rect")
-        .data(colors)
+        .data(cellColors)
         .enter()
         .append("rect")
-        .attr("x", (d, i) => (legendWidth / colors.length) * i)
-        .attr("width", legendWidth / colors.length)
+        .attr("x", (d, i) => (legendWidth / cellColors.length) * i)
+        .attr("width", legendWidth / cellColors.length)
         .attr("height", legendHeight)
         .attr("fill", d => d);
-   
+
+      // cells
       graph
         .selectAll("rect")
         .data(data)
@@ -133,7 +147,19 @@ document.addEventListener("DOMContentLoaded", () => {
         .attr("fill", (d, i) => colorScale(d.variance))
         .attr("data-month", d => d.month - 1)
         .attr("data-year", d => d.year)
-        .attr("data-temp", d => d.variance);
+        .attr("data-temp", d => d.variance)
+        .on("mouseover", d => {
+          tooltip.transition().duration(100).style("opacity", 0.8);
+          tooltip
+            .html(`${d.year}, ${months[d.month-1]}<br />${calcTemp(d.variance)}`)
+            .style("left", d3.event.pageX + 10 + "px")
+            .style("top", d3.event.pageY + 10 + "px") ;
+          tooltip.attr("data-year", d.year);
+        })
+        .on("mouseout", d => {
+          tooltip.transition().duration(100).style("opacity", 0);
+        });
+        console.log(calcTemp(minVariance));
       // console.log(`minDate: ${minDate}, maxDate: ${maxDate}`)
       // console.log(`-6 would be color ${colorScale(-6)}`)
       // console.log(`0 would be color ${colorScale(0)}`)

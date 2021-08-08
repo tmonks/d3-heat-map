@@ -4,20 +4,18 @@ const h = 700;
 const legendWidth = 300;
 const legendHeight = 40;
 const legendMarginBottom = 20;
-const margin = { top: 100, right: 50, bottom: 100, left: 100 };
-const graphWidth = w - margin.left - margin.right;
-const graphHeight = h - margin.top - margin.bottom;
+const graphMargin = { top: 100, right: 50, bottom: 100, left: 100 };
+const graphWidth = w - graphMargin.left - graphMargin.right;
+const graphHeight = h - graphMargin.top - graphMargin.bottom;
 const baseTemp = 8.66;
 
-// cell Colors
+// cell colors
 const cellColors = [ "#f9edccff", "#f9df74ff", "#edae49ff", "#ea2b1fff", "#61210fff" ];
 
 // months for y-axis
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-const calcTemp = (variance) => baseTemp + variance;
-
-// add tooltip
+// tooltip, hidden by default
 const tooltip = d3
   .select(".canvas")
   .append("div")
@@ -27,14 +25,14 @@ const tooltip = d3
 // main svg
 const svg = d3.select(".canvas").append("svg").attr("width", w).attr("height", h);
 
-// create graph area
+// graph area
 const graph = svg
   .append("g")
   .attr("width", graphWidth)
   .attr("height", graphHeight)
-  .attr("transform", `translate(${margin.left}, ${margin.top})`); // move it by margin sizes
+  .attr("transform", `translate(${graphMargin.left}, ${graphMargin.top})`); // move it by margin sizes
 
-// create legend area
+// legend area
 const legend = svg
   .append("g")
   .attr("width", legendWidth)
@@ -42,7 +40,7 @@ const legend = svg
   .attr("id", "legend")
   .attr("transform", `translate(${w /2 - legendWidth / 2}, ${h - legendHeight - 20})`);
 
-// add title
+// title
 svg
   .append("text")
   .attr("id", "title")
@@ -50,13 +48,14 @@ svg
   .attr("y", 45)
   .text("Monthly Global Land-Surface Temperature");
 
-// add description
+// description
 svg
   .append("text")
   .attr("id", "description")
   .attr("x", w / 2)
   .attr("y", 75)
   .html("1753 - 2015: base temperature 8.66 &#176C");
+
 
 document.addEventListener("DOMContentLoaded", () => {
   fetch("https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/global-temperature.json")
@@ -69,11 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const maxDate = new Date(maxYear, 0, 1);
       const minTemp = d3.min(data, d => d.variance) + baseTemp;
       const maxTemp = d3.max(data, d => d.variance) + baseTemp;
-      console.log(`Retrieved ${data.length} records`);
-      console.log(`Found dates from ${minDate} to ${maxDate}`);
-      console.log(`Found variance ranging from ${minTemp} to ${maxTemp}`);
 
-      // yScale is bands for each of the 12 months
+      // yScale is made up of bands for each of the 12 months
       const yScale = d3
         .scaleBand()
         .domain(months)
@@ -85,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .domain([minDate, maxDate])
         .range([0, graphWidth])
 
-      // colorScale
+      // color scale to map temperatures to colors
       const colorScale = d3
         .scaleQuantize()
         .domain([minTemp, maxTemp])
@@ -97,33 +93,32 @@ document.addEventListener("DOMContentLoaded", () => {
         .domain([minTemp, maxTemp])
         .range([0,legendWidth]);
 
-      // x-axis for the years
+      // x-axis with years
       const xAxis = d3.axisBottom(xScale);
       svg.append("g")
         .attr("id", "x-axis")
-        .attr("transform", `translate(${margin.left}, ${h - margin.bottom})`) // move it to the bottom edge minus padding
+        .attr("transform", `translate(${graphMargin.left}, ${h - graphMargin.bottom})`)
         .call(xAxis);
 
       // y-axis with months
       const yAxis = d3.axisLeft(yScale);
       svg.append("g")
         .attr("id", "y-axis")
-        .attr("transform", `translate(${margin.left}, ${margin.top})`) 
+        .attr("transform", `translate(${graphMargin.left}, ${graphMargin.top})`) 
         .call(yAxis);
 
       // legend Axis
-      const legendTicks = cellColors.map((x, i) => i * (maxTemp - minTemp) / cellColors.length + minTemp);
+      const legendTicks = cellColors.map((x, i) => i * (maxTemp - minTemp) / cellColors.length + minTemp); // populate ticks to align with the color squares
       legendTicks.push(maxTemp);
-      console.log("ticks: " + legendTicks);
       const legendAxis = d3.axisBottom(legendScale);
       legendAxis.tickValues(legendTicks);
-      legendAxis.tickFormat(d3.format(".1f"));
+      legendAxis.tickFormat(d3.format(".1f")); // one decimal place
       legend.append("g")
         .attr("id", "legend-axis")
         .attr("transform", `translate(0, ${legendHeight - legendMarginBottom})`)
         .call(legendAxis);
 
-      // legend squares
+      // legend squares for each color
       legend
         .selectAll("rect")
         .data(cellColors)
@@ -134,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .attr("height", legendHeight - legendMarginBottom)
         .attr("fill", d => d);
 
-      // cells
+      // heat map cells
       graph
         .selectAll("rect")
         .data(data)
@@ -150,21 +145,15 @@ document.addEventListener("DOMContentLoaded", () => {
         .attr("data-year", d => d.year)
         .attr("data-temp", d => d.variance)
         .on("mouseover", d => {
-          tooltip.transition().duration(100).style("opacity", 0.8);
+          tooltip.transition().duration(100).style("opacity", 0.8); // show the tooltip
           tooltip
-            .html(`${months[d.month-1]} ${d.year}<br />${d3.format(".1f")(calcTemp(d.variance))} &#176C`)
+            .html(`${months[d.month-1]} ${d.year}<br />${d3.format(".1f")(d.variance + baseTemp)} &#176C`)
             .style("left", d3.event.pageX + 10 + "px")
             .style("top", d3.event.pageY + 10 + "px") ;
           tooltip.attr("data-year", d.year);
         })
         .on("mouseout", d => {
-          tooltip.transition().duration(100).style("opacity", 0);
+          tooltip.transition().duration(100).style("opacity", 0); // hide the tooltip
         });
-        console.log(calcTemp(minTemp));
-      // console.log(`minDate: ${minDate}, maxDate: ${maxDate}`)
-      // console.log(`-6 would be color ${colorScale(-6)}`)
-      // console.log(`0 would be color ${colorScale(0)}`)
-      // console.log(`3 would be color ${colorScale(3)}`)
-
     });
 });

@@ -1,9 +1,10 @@
 // margins and dimensions
 const w = 1600;
-const h = 600;
+const h = 700;
 const legendWidth = 300;
-const legendHeight = 20;
-const margin = { top: 100, right: 50, bottom: 50, left: 100 };
+const legendHeight = 40;
+const legendMarginBottom = 20;
+const margin = { top: 100, right: 50, bottom: 100, left: 100 };
 const graphWidth = w - margin.left - margin.right;
 const graphHeight = h - margin.top - margin.bottom;
 const baseTemp = 8.66;
@@ -39,14 +40,14 @@ const legend = svg
   .attr("width", legendWidth)
   .attr("height", legendHeight)
   .attr("id", "legend")
-  .attr("transform", "translate(20, 5)");
+  .attr("transform", `translate(${w /2 - legendWidth / 2}, ${h - legendHeight - 20})`);
 
 // add title
 svg
   .append("text")
   .attr("id", "title")
   .attr("x", w / 2)
-  .attr("y", 30)
+  .attr("y", 45)
   .text("Monthly Global Land-Surface Temperature");
 
 // add description
@@ -54,7 +55,7 @@ svg
   .append("text")
   .attr("id", "description")
   .attr("x", w / 2)
-  .attr("y", 60)
+  .attr("y", 75)
   .html("1753 - 2015: base temperature 8.66 &#176C");
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -119,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
       legendAxis.tickFormat(d3.format(".1f"));
       legend.append("g")
         .attr("id", "legend-axis")
-        .attr("transform", `translate(0, ${legendHeight})`)
+        .attr("transform", `translate(0, ${legendHeight - legendMarginBottom})`)
         .call(legendAxis);
 
       // legend squares
@@ -130,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .append("rect")
         .attr("x", (d, i) => (legendWidth / cellColors.length) * i)
         .attr("width", legendWidth / cellColors.length)
-        .attr("height", legendHeight)
+        .attr("height", legendHeight - legendMarginBottom)
         .attr("fill", d => d);
 
       // cells
